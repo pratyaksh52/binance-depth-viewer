@@ -74,11 +74,13 @@ func (ob *OrderBook) handleDepthResponse(res BinanceDepthResult) {
 		price, _ := strconv.ParseFloat(ask[0], 64)
 		size, _ := strconv.ParseFloat(ask[1], 64)
 
-		if size == 0 {
-			if event, ok := ob.Asks.Get(getAskByPrice(price)); ok {
-				// fmt.Printf("Deleting entry %.2f", price)
-				ob.Asks.Delete(event)
+		if entry, ok := ob.Asks.Get(getAskByPrice(price)); ok {
+			if size == 0 {
+				ob.Asks.Delete(entry)
+			} else {
+				entry.Size = size
 			}
+			continue
 		}
 
 		entry := &OrderBookEntry{
@@ -92,11 +94,13 @@ func (ob *OrderBook) handleDepthResponse(res BinanceDepthResult) {
 		price, _ := strconv.ParseFloat(bid[0], 64)
 		size, _ := strconv.ParseFloat(bid[1], 64)
 
-		if size == 0 {
-			if event, ok := ob.Bids.Get(getBidsByPrice(price)); ok {
-				// fmt.Printf("Deleting entry %.2f", price)
-				ob.Bids.Delete(event)
+		if entry, ok := ob.Bids.Get(getBidsByPrice(price)); ok {
+			if size == 0 {
+				ob.Bids.Delete(entry)
+			} else {
+				entry.Size = size
 			}
+			continue
 		}
 
 		entry := &OrderBookEntry{
@@ -118,30 +122,60 @@ type BinanceDepthResponse struct {
 	Data   BinanceDepthResult `json:"data"`
 }
 
-const wsendpoint = "wss://fstream.binance.com/stream?streams=btcusdt@depth"
+func (ob *OrderBook) getNBids(depth int) []*OrderBookEntry {
+	var (
+		bids = make([]*OrderBookEntry, depth)
+		itr  = ob.Bids.Iterator(nil, nil)
+		i    = 0
+	)
 
-func (ob *OrderBook) render(x, y int) {
-	// Render Ask
-	itr := ob.Asks.Iterator(nil, nil)
-	i := 0
-	var item *OrderBookEntry
-	var priceStr string
 	for itr.Next() {
-		item = itr.Item()
-		priceStr := fmt.Sprintf("%.2f", item.Price)
-		renderText(x, y+i, priceStr, termbox.ColorRed)
+		if i == depth {
+			break
+		}
+		bids[i] = itr.Item()
 		i++
 	}
+	return bids
+}
 
-	// Render Bid
-	itr = ob.Bids.Iterator(nil, nil)
-	i = 0
-	x = x + 10
+func (ob *OrderBook) getNAsks(depth int) []*OrderBookEntry {
+	var (
+		asks = make([]*OrderBookEntry, depth)
+		itr  = ob.Asks.Iterator(nil, nil)
+		i    = 0
+	)
+
 	for itr.Next() {
-		item = itr.Item()
-		priceStr = fmt.Sprintf("%.2f", item.Price)
-		renderText(x, y+i, priceStr, termbox.ColorGreen)
+		if i == depth {
+			break
+		}
+		asks[i] = itr.Item()
 		i++
+	}
+	return asks
+}
+
+func (ob *OrderBook) render(x, y int) {
+	// Render Asks
+	for i, ask := range ob.getNAsks(10) {
+		if ask == nil {
+			continue
+		}
+		price := fmt.Sprintf("%.2f", ask.Price)
+		size := fmt.Sprintf("%.2f", ask.Size)
+		renderText(x, y+i, price, termbox.ColorRed)
+		renderText(x+10, y+i, size, termbox.ColorCyan)
+	}
+
+	for i, bid := range ob.getNBids(10) {
+		if bid == nil {
+			continue
+		}
+		price := fmt.Sprintf("%.2f", bid.Price)
+		size := fmt.Sprintf("%.2f", bid.Size)
+		renderText(x, y+i+10, price, termbox.ColorGreen)
+		renderText(x+10, y+i+10, size, termbox.ColorCyan)
 	}
 }
 
@@ -152,6 +186,8 @@ func renderText(x, y int, msg string, color termbox.Attribute) {
 		x += width
 	}
 }
+
+const wsendpoint = "wss://fstream.binance.com/stream?streams=btcusdt@depth"
 
 func main() {
 	conn, _, err := websocket.DefaultDialer.Dial(wsendpoint, nil)
@@ -172,29 +208,29 @@ func main() {
 
 	termbox.Init()
 	defer termbox.Close()
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	// termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
 	isRunning := true
+	eventch := make(chan termbox.Event, 1)
 	go func() {
-		switch event := termbox.PollEvent(); event.Type {
-		case termbox.EventKey:
-			switch event.Key {
-			case termbox.KeySpace:
-				ob.render(0, 0)
-			case termbox.KeyEsc:
-				isRunning = false
-			}
-		}
-		time.Sleep(10 * time.Second)
-		isRunning = false
+		eventch <- termbox.PollEvent()
 	}()
 
 	for isRunning {
-		// event := termbox.PollEent()
-		// case termbox.even
-		ob.render(0, 0)
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		select {
+		case event := <-eventch:
+			switch event.Key {
+			case termbox.KeyEsc:
+				isRunning = false
+			default:
+				continue
+			}
+		default:
+		}
+		ob.render(10, 10)
+		time.Sleep(time.Millisecond * 32)
 		termbox.Flush()
-		// time.Sleep(2 * time.Second)
 	}
 }
 
