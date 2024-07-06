@@ -163,7 +163,7 @@ func (ob *OrderBook) render(x, y int) {
 			continue
 		}
 		price := fmt.Sprintf("%.2f", ask.Price)
-		size := fmt.Sprintf("%.2f", ask.Size)
+		size := fmt.Sprintf("%.4f", ask.Size)
 		renderText(x, y+i, price, termbox.ColorRed)
 		renderText(x+10, y+i, size, termbox.ColorCyan)
 	}
@@ -173,7 +173,7 @@ func (ob *OrderBook) render(x, y int) {
 			continue
 		}
 		price := fmt.Sprintf("%.2f", bid.Price)
-		size := fmt.Sprintf("%.2f", bid.Size)
+		size := fmt.Sprintf("%.4f", bid.Size)
 		renderText(x, y+i+10, price, termbox.ColorGreen)
 		renderText(x+10, y+i+10, size, termbox.ColorCyan)
 	}
@@ -181,13 +181,14 @@ func (ob *OrderBook) render(x, y int) {
 
 func renderText(x, y int, msg string, color termbox.Attribute) {
 	for _, ch := range msg {
-		termbox.SetCell(x, y, ch, color, termbox.ColorDefault)
+		termbox.SetCell(x, y, ch, color, defaultBackgroundColor)
 		width := runewidth.RuneWidth(ch)
 		x += width
 	}
 }
 
 const wsendpoint = "wss://fstream.binance.com/stream?streams=btcusdt@depth"
+const defaultBackgroundColor = termbox.ColorDefault
 
 func main() {
 	conn, _, err := websocket.DefaultDialer.Dial(wsendpoint, nil)
@@ -208,16 +209,18 @@ func main() {
 
 	termbox.Init()
 	defer termbox.Close()
-	// termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
 	isRunning := true
 	eventch := make(chan termbox.Event, 1)
+	defer close(eventch)
 	go func() {
-		eventch <- termbox.PollEvent()
+		for {
+			eventch <- termbox.PollEvent()
+		}
 	}()
 
 	for isRunning {
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		termbox.Clear(defaultBackgroundColor, defaultBackgroundColor)
 		select {
 		case event := <-eventch:
 			switch event.Key {
@@ -228,29 +231,8 @@ func main() {
 			}
 		default:
 		}
-		ob.render(10, 10)
+		ob.render(50, 2)
 		time.Sleep(time.Millisecond * 32)
 		termbox.Flush()
 	}
 }
-
-// func main() {
-// 	conn, _, err := websocket.DefaultDialer.Dial(wsendpoint, nil)
-// 	logError(err)
-
-// 	var (
-// 		ob     = NewOrderBook()
-// 		result BinanceDepthResponse
-// 	)
-// 	for {
-// 		err := conn.ReadJSON(&result)
-// 		logError(err)
-
-// 		ob.handleDepthResponse(result.Data)
-// 		itr := ob.Bids.Iterator(nil, nil)
-// 		for itr.Next() {
-// 			item := itr.Item()
-// 			fmt.Printf("%+v\n", item)
-// 		}
-// 	}
-// }
