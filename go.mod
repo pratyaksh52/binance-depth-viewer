@@ -1,4 +1,4 @@
-module github.com/pratyaksh52/binance-indicator
+module github.com/pratyaksh52/binance-depth-viewer
 
 go 1.22.3
 

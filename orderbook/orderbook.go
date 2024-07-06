@@ -3,7 +3,7 @@ package orderbook
 import (
 	"strconv"
 
-	"github.com/pratyaksh52/binance-indicator/binance"
+	"github.com/pratyaksh52/binance-depth-viewer/binance"
 
 	"github.com/VictorLowther/btree"
 )

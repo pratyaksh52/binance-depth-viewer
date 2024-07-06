@@ -3,11 +3,11 @@ package main
 import (
 	"time"
 
-	"github.com/pratyaksh52/binance-indicator/binance"
-	"github.com/pratyaksh52/binance-indicator/renderer"
-	"github.com/pratyaksh52/binance-indicator/utils"
+	"github.com/pratyaksh52/binance-depth-viewer/binance"
+	"github.com/pratyaksh52/binance-depth-viewer/renderer"
+	"github.com/pratyaksh52/binance-depth-viewer/utils"
 
-	"github.com/pratyaksh52/binance-indicator/orderbook"
+	"github.com/pratyaksh52/binance-depth-viewer/orderbook"
 
 	"github.com/gorilla/websocket"
 	"github.com/nsf/termbox-go"

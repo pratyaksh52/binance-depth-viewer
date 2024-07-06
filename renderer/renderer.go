@@ -5,7 +5,7 @@ import (
 
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
-	"github.com/pratyaksh52/binance-indicator/orderbook"
+	"github.com/pratyaksh52/binance-depth-viewer/orderbook"
 )
 
 const defaultBackgroundColor = termbox.ColorDefault
