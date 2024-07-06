@@ -13,16 +13,16 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-const wsendpoint = "wss://fstream.binance.com/stream?streams=btcusdt@depth"
+const wsEndpoint = "wss://fstream.binance.com/stream?streams=btcusdt@depth"
 const defaultBackgroundColor = termbox.ColorDefault
 
 func main() {
-	conn, _, err := websocket.DefaultDialer.Dial(wsendpoint, nil)
+	conn, _, err := websocket.DefaultDialer.Dial(wsEndpoint, nil)
 	utils.LogError(err)
 
 	var (
 		ob     = orderbook.NewOrderBook()
-		result binance.BinanceDepthResponse
+		result binance.DepthResponse
 	)
 
 	go func() {
@@ -37,18 +37,18 @@ func main() {
 	defer termbox.Close()
 
 	isRunning := true
-	eventch := make(chan termbox.Event, 1)
-	defer close(eventch)
+	eventCh := make(chan termbox.Event, 1)
+	defer close(eventCh)
 	go func() {
 		for {
-			eventch <- termbox.PollEvent()
+			eventCh <- termbox.PollEvent()
 		}
 	}()
 
 	for isRunning {
 		termbox.Clear(defaultBackgroundColor, defaultBackgroundColor)
 		select {
-		case event := <-eventch:
+		case event := <-eventCh:
 			switch event.Key {
 			case termbox.KeyEsc:
 				isRunning = false
@@ -57,7 +57,7 @@ func main() {
 			}
 		default:
 		}
-		renderer.RenderOrderBook(ob, 50, 2)
+		renderer.RenderOrderBook(ob, 0, 0)
 		time.Sleep(time.Millisecond * 32)
 		termbox.Flush()
 	}

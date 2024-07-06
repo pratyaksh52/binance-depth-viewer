@@ -9,10 +9,11 @@ import (
 )
 
 const defaultBackgroundColor = termbox.ColorDefault
+const defaultLimit = 10
 
 func RenderOrderBook(ob *orderbook.OrderBook, x, y int) {
 	// Render Asks
-	for i, ask := range ob.GetNAsks(10) {
+	for i, ask := range ob.GetNAsks(defaultLimit) {
 		if ask == nil {
 			continue
 		}
@@ -22,14 +23,14 @@ func RenderOrderBook(ob *orderbook.OrderBook, x, y int) {
 		RenderText(x+10, y+i, size, termbox.ColorCyan)
 	}
 
-	for i, bid := range ob.GetNBids(10) {
+	for i, bid := range ob.GetNBids(defaultLimit) {
 		if bid == nil {
 			continue
 		}
 		price := fmt.Sprintf("%.2f", bid.Price)
 		size := fmt.Sprintf("%.4f", bid.Size)
-		RenderText(x, y+i+10, price, termbox.ColorGreen)
-		RenderText(x+10, y+i+10, size, termbox.ColorCyan)
+		RenderText(x, y+i+defaultLimit, price, termbox.ColorGreen)
+		RenderText(x+defaultLimit, y+i+defaultLimit, size, termbox.ColorCyan)
 	}
 }
 

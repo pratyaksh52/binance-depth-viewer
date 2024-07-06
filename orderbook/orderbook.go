@@ -8,14 +8,14 @@ import (
 	"github.com/VictorLowther/btree"
 )
 
-type OrderBookEntry struct {
+type BookEntry struct {
 	Price float64
 	Size  float64
 }
 
 type OrderBook struct {
-	Asks *btree.Tree[*OrderBookEntry]
-	Bids *btree.Tree[*OrderBookEntry]
+	Asks *btree.Tree[*BookEntry]
+	Bids *btree.Tree[*BookEntry]
 }
 
 func NewOrderBook() *OrderBook {
@@ -25,16 +25,16 @@ func NewOrderBook() *OrderBook {
 	}
 }
 
-func byBestBid(a, b *OrderBookEntry) bool {
+func byBestBid(a, b *BookEntry) bool {
 	return a.Price >= b.Price
 }
 
-func byBestAsk(a, b *OrderBookEntry) bool {
+func byBestAsk(a, b *BookEntry) bool {
 	return a.Price < b.Price
 }
 
-func getAskByPrice(price float64) btree.CompareAgainst[*OrderBookEntry] {
-	return func(e *OrderBookEntry) int {
+func getAskByPrice(price float64) btree.CompareAgainst[*BookEntry] {
+	return func(e *BookEntry) int {
 		switch {
 		case e.Price < price:
 			return -1
@@ -46,8 +46,8 @@ func getAskByPrice(price float64) btree.CompareAgainst[*OrderBookEntry] {
 	}
 }
 
-func getBidsByPrice(price float64) btree.CompareAgainst[*OrderBookEntry] {
-	return func(e *OrderBookEntry) int {
+func getBidsByPrice(price float64) btree.CompareAgainst[*BookEntry] {
+	return func(e *BookEntry) int {
 		switch {
 		case e.Price > price:
 			return -1
@@ -59,7 +59,7 @@ func getBidsByPrice(price float64) btree.CompareAgainst[*OrderBookEntry] {
 	}
 }
 
-func (ob *OrderBook) HandleDepthResponse(res binance.BinanceDepthResult) {
+func (ob *OrderBook) HandleDepthResponse(res binance.DepthResult) {
 	for _, ask := range res.Asks {
 		price, _ := strconv.ParseFloat(ask[0], 64)
 		size, _ := strconv.ParseFloat(ask[1], 64)
@@ -73,7 +73,7 @@ func (ob *OrderBook) HandleDepthResponse(res binance.BinanceDepthResult) {
 			continue
 		}
 
-		entry := &OrderBookEntry{
+		entry := &BookEntry{
 			Price: price,
 			Size:  size,
 		}
@@ -93,7 +93,7 @@ func (ob *OrderBook) HandleDepthResponse(res binance.BinanceDepthResult) {
 			continue
 		}
 
-		entry := &OrderBookEntry{
+		entry := &BookEntry{
 			Price: price,
 			Size:  size,
 		}
@@ -102,9 +102,9 @@ func (ob *OrderBook) HandleDepthResponse(res binance.BinanceDepthResult) {
 	}
 }
 
-func (ob *OrderBook) GetNBids(depth int) []*OrderBookEntry {
+func (ob *OrderBook) GetNBids(depth int) []*BookEntry {
 	var (
-		bids = make([]*OrderBookEntry, depth)
+		bids = make([]*BookEntry, depth)
 		itr  = ob.Bids.Iterator(nil, nil)
 		i    = 0
 	)
@@ -119,9 +119,9 @@ func (ob *OrderBook) GetNBids(depth int) []*OrderBookEntry {
 	return bids
 }
 
-func (ob *OrderBook) GetNAsks(depth int) []*OrderBookEntry {
+func (ob *OrderBook) GetNAsks(depth int) []*BookEntry {
 	var (
-		asks = make([]*OrderBookEntry, depth)
+		asks = make([]*BookEntry, depth)
 		itr  = ob.Asks.Iterator(nil, nil)
 		i    = 0
 	)
