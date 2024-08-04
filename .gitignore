@@ -1,2 +1,20 @@
 # Editor configs
-.idea/
+.idea
+.vscode
+
+# Logs
+logs
+*.log
+*.log.*
+
+# Binary files
+*.exe
+*.bin
+*.so
+*.dll
+*.o
+*.out
+
+# Build artifacts
+build
+dist
